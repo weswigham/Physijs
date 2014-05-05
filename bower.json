@@ -1,6 +1,6 @@
 {
   "name": "Physijs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": [
     "physi.js",
     "phsijs_worker.js"
@@ -9,7 +9,7 @@
     ".jshintrc"
   ],
   "dependencies": {
-    "threejs": "r59",
+    "threejs": "r67",
     "ammo.js": "kripken/ammo.js"
   }
 }

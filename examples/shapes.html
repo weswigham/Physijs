@@ -46,7 +46,7 @@
 		scene = new Physijs.Scene({ fixedTimeStep: 1 / 120 });
 		scene.setGravity(new THREE.Vector3( 0, -30, 0 ));
 		scene.addEventListener(
-			'update',
+			'updateScene',
 			function() {
 				scene.simulate( undefined, 2 );
 				physics_stats.update();

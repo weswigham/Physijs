@@ -43,7 +43,7 @@
 		scene = new Physijs.Scene;
 		scene.setGravity(new THREE.Vector3( 0, -30, 0 ));
 		scene.addEventListener(
-			'update',
+			'updateScene',
 			function() {
 				scene.simulate( undefined, 1 );
 				physics_stats.update();
@@ -101,7 +101,10 @@
 	
 	spawnBox = (function() {
 		var box_geometry = new THREE.CubeGeometry( 4, 4, 4 ),
-			handleCollision = function( collided_with, linearVelocity, angularVelocity ) {
+			handleCollision = function( event ) {
+                var collided_with = event.object;
+                var linearVelocity = event.linvel;
+                var angularVelocity = event.angvel;
 				switch ( ++this.collisions ) {
 					
 					case 1:

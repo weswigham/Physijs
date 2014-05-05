@@ -1,4 +1,9 @@
-'use strict';
+/* global Ammo, console, importScripts */
+/* jshint browser: true */
+
+var self = this;
+(function() {
+"use strict";
 var	
 	transferableMessage = self.webkitPostMessage || self.postMessage,
 	
@@ -87,7 +92,7 @@ getShapeFromCache = function ( cache_key ) {
 
 setShapeCache = function ( cache_key, shape ) {
 	_object_shapes[ cache_key ] = shape;
-}
+};
 
 createShape = function( description ) {
 	var cache_key, shape;
@@ -152,10 +157,20 @@ createShape = function( description ) {
 			}
 			break;
 		
+        case 'container':
+          return;
+			/*shape = new Ammo.btBvhTriangleMeshShape(
+				new Ammo.btTriangleMesh(),
+				true,
+				true
+			);
+			_noncached_shapes[description.id] = shape;
+			break;*/
+        
 		case 'concave':
-			var i, triangle, triangle_mesh = new Ammo.btTriangleMesh;
-			if (!description.triangles.length) return false
-
+			var i, triangle, triangle_mesh = new Ammo.btTriangleMesh();
+			if (!description.triangles.length) return false;
+        
 			for ( i = 0; i < description.triangles.length; i++ ) {
 				triangle = description.triangles[i];
 				
@@ -170,7 +185,7 @@ createShape = function( description ) {
 				_vec3_3.setX(triangle[2].x);
 				_vec3_3.setY(triangle[2].y);
 				_vec3_3.setZ(triangle[2].z);
-				
+              
 				triangle_mesh.addTriangle(
 					_vec3_1,
 					_vec3_2,
@@ -188,7 +203,7 @@ createShape = function( description ) {
 			break;
 		
 		case 'convex':
-			var i, point, shape = new Ammo.btConvexHullShape;
+			var i, point, shape = new Ammo.btConvexHullShape();
 			for ( i = 0; i < description.points.length; i++ ) {
 				point = description.points[i];
 				
@@ -229,11 +244,10 @@ createShape = function( description ) {
 			shape.setLocalScaling(_vec3_1);
 			_noncached_shapes[description.id] = shape;
 			break;
-		
+          
 		default:
 			// Not recognized
 			return;
-			break;
 	}
 	
 	return shape;
@@ -242,7 +256,7 @@ createShape = function( description ) {
 public_functions.init = function( params ) {
 	importScripts( params.ammo );
 	
-	_transform = new Ammo.btTransform;
+	_transform = new Ammo.btTransform();
 	_vec3_1 = new Ammo.btVector3(0,0,0);
 	_vec3_2 = new Ammo.btVector3(0,0,0);
 	_vec3_3 = new Ammo.btVector3(0,0,0);
@@ -267,9 +281,9 @@ public_functions.init = function( params ) {
 	vehiclereport[0] = MESSAGE_TYPES.VEHICLEREPORT;
 	constraintreport[0] = MESSAGE_TYPES.CONSTRAINTREPORT;
 	
-	var collisionConfiguration = new Ammo.btDefaultCollisionConfiguration,
+	var collisionConfiguration = new Ammo.btDefaultCollisionConfiguration(),
 		dispatcher = new Ammo.btCollisionDispatcher( collisionConfiguration ),
-		solver = new Ammo.btSequentialImpulseConstraintSolver,
+		solver = new Ammo.btSequentialImpulseConstraintSolver(),
 		broadphase;
 	
 	if ( !params.broadphase ) params.broadphase = { type: 'dynamic' };
@@ -291,9 +305,9 @@ public_functions.init = function( params ) {
 			
 			break;
 		
-		case 'dynamic':
+		//case 'dynamic':
 		default:
-			broadphase = new Ammo.btDbvtBroadphase;
+			broadphase = new Ammo.btDbvtBroadphase();
 			break;
 	}
 	
@@ -330,16 +344,17 @@ public_functions.addObject = function( description ) {
 	localInertia, shape, motionState, rbInfo, body;
 
 shape = createShape( description );
-if (!shape) return
 // If there are children then this is a compound shape
 if ( description.children ) {
-	var compound_shape = new Ammo.btCompoundShape, _child;
-	compound_shape.addChildShape( _transform, shape );
-	
+	var compound_shape = new Ammo.btCompoundShape(), _child;
+    if (shape) {
+      compound_shape.addChildShape( _transform, shape );
+    } 
+  
 	for ( i = 0; i < description.children.length; i++ ) {
 		_child = description.children[i];
 		
-		var trans = new Ammo.btTransform;
+		var trans = new Ammo.btTransform();
 		trans.setIdentity();
 		
 		_vec3_1.setX(_child.position_offset.x);
@@ -354,13 +369,18 @@ if ( description.children ) {
 		trans.setRotation(_quat); 
 		
 		shape = createShape( description.children[i] );
-		compound_shape.addChildShape( trans, shape );
+        if (shape) {
+		  compound_shape.addChildShape( trans, shape );
+        }
 		Ammo.destroy(trans);
 	}
 	
 	shape = compound_shape;
     _compound_shapes[ description.id ] = shape;
 	}
+  
+    if (!shape) { console.log('Null shape!'); return;};
+  
 	_vec3_1.setX(0);
 	_vec3_1.setY(0);
 	_vec3_1.setZ(0);
@@ -388,7 +408,7 @@ if ( description.children ) {
 	}
 	
 	body = new Ammo.btRigidBody( rbInfo );
-	Ammo.destroy(rbInfo);
+    Ammo.destroy(rbInfo);
 	
 	if ( typeof description.collision_flags !== 'undefined' ) {
 		body.setCollisionFlags( description.collision_flags );
@@ -400,7 +420,7 @@ if ( description.children ) {
 	_objects[ body.id ] = body;
 	_motion_states[ body.id ] = motionState;
 	
-	var ptr = body.a != undefined ? body.a : body.ptr;
+	var ptr = body.a !== undefined ? body.a : body.ptr;
 	_objects_ammo[ptr] = body.id;
 	_num_objects++;
 	
@@ -497,7 +517,7 @@ public_functions.removeObject = function( details ) {
 	Ammo.destroy(_motion_states[details.id]);
     if (_compound_shapes[details.id]) Ammo.destroy(_compound_shapes[details.id]);
 	if (_noncached_shapes[details.id]) Ammo.destroy(_noncached_shapes[details.id]);
-	var ptr = _objects[details.id].a != undefined ? _objects[details.id].a : _objects[details.id].ptr;
+	var ptr = _objects[details.id].a !== undefined ? _objects[details.id].a : _objects[details.id].ptr;
 	delete _objects_ammo[ptr];
 	delete _objects[details.id];
 	delete _motion_states[details.id];
@@ -508,6 +528,7 @@ public_functions.removeObject = function( details ) {
 
 public_functions.updateTransform = function( details ) {
 	_object = _objects[details.id];
+    if (_object===undefined) {console.log('Attempted to update transform on nonexistant physobj');return;};
 	_object.getMotionState().getWorldTransform( _transform );
 	
 	if ( details.pos ) {
@@ -777,7 +798,7 @@ public_functions.addConstraint = function ( details ) {
 			}
 			
 			Ammo.destroy(transforma);
-			if (transformb != undefined) {
+			if (transformb !== undefined) {
 				Ammo.destroy(transformb);	
 			}
 			break;
@@ -867,7 +888,7 @@ public_functions.addConstraint = function ( details ) {
 				);
 			}
 			Ammo.destroy(transforma);
-			if (transformb != undefined) {
+			if (transformb !== undefined) {
 				Ammo.destroy(transformb);	
 			}
 			break;
@@ -875,7 +896,7 @@ public_functions.addConstraint = function ( details ) {
 		default:
 			return;
 		
-	};
+	}
 	
 	world.addConstraint( constraint );
 
@@ -902,7 +923,7 @@ public_functions.removeConstraint = function( details ) {
 
 public_functions.constraint_setBreakingImpulseThreshold = function( details ) {
 	var constraint = _constraints[ details.id ];
-	if ( constraint !== undefind ) {
+	if ( constraint !== undefined ) {
 		constraint.setBreakingImpulseThreshold( details.threshold );
 	}
 };
@@ -955,7 +976,8 @@ public_functions.hinge_enableAngularMotor = function( params ) {
 	}
 };
 public_functions.hinge_disableMotor = function( params ) {
-	_constraints[ params.constraint ].enableMotor( false );
+  var constraint = _constraints[ params.constraint ];
+  constraint.enableMotor( false );
 	if ( constraint.getRigidBodyB() ) {
 		constraint.getRigidBodyB().activate();
 	}
@@ -1339,6 +1361,9 @@ reportConstraints = function() {
 		if ( _constraints.hasOwnProperty( index ) ) {
 			constraint = _constraints[index];
 			offset_body = constraint.getRigidBodyA();
+          for (var k in constraint) {
+            console.log(k);
+          }
 			transform = constraint.getFrameOffsetA(); 
 			origin = transform.getOrigin();
 
@@ -1365,7 +1390,7 @@ reportConstraints = function() {
 	
 };
 
-self.onmessage = function( event ) {
+self.addEventListener('message', function( event ) {
 	
 	if ( event.data instanceof Float32Array ) {
 		// transferable object
@@ -1393,7 +1418,11 @@ self.onmessage = function( event ) {
 	
 	if ( event.data.cmd && public_functions[event.data.cmd] ) {
 		//if ( event.data.params.id !== undefined && _objects[event.data.params.id] === undefined && event.data.cmd !== 'addObject' && event.data.cmd !== 'registerMaterial' ) return;
-		public_functions[event.data.cmd]( event.data.params );
+        console.log(event.data.cmd);
+        try {
+		  public_functions[event.data.cmd]( event.data.params );
+        } catch (e) { console.log(e.stack) };
 	}
 	
-};
+});
+})();
